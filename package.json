@@ -1,0 +1,21 @@
+{
+  "name": "image-comparison",
+  "version": "0.0.1",
+  "description": "Simple Image Comparison",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --harmony index.js"
+  },
+  "author": "1000ch",
+  "license": "MIT",
+  "dependencies": {
+    "koa-route": "~1.0.2",
+    "koa-logger": "~1.1.1",
+    "koa": "~0.3.0",
+    "co-views": "~0.2.0",
+    "jade": "~1.1.5",
+    "optimist": "~0.6.0",
+    "underscore": "~1.5.2",
+    "filesize": "~2.0.0"
+  }
+}
