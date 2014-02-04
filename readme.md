@@ -4,6 +4,8 @@
 
 Compare images which are contained in specified directories.
 
+**This is an experimental project.**
+
 ## Usage
 
 ```sh
