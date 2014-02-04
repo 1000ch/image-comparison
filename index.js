@@ -3,7 +3,6 @@
 // core modules
 var path = require('path');
 var fs = require('fs');
-var extname = path.extname;
 
 // dependency modules
 var _ = require('underscore');
@@ -11,6 +10,12 @@ var filesize = require('filesize');
 var argv = require('optimist').argv;
 var before = argv.before;
 var after = argv.after;
+
+// koa modules
+var koa = require('koa');
+var logger = require('koa-logger');
+var route = require('koa-route');
+var views = require('co-views');
 
 // if --before is not directory
 if (!fs.statSync(before).isDirectory()) {
@@ -25,50 +30,6 @@ if (!fs.statSync(after).isDirectory()) {
 // target image extension
 const imgext = ['.png', '.webp', '.gif', '.jpg', '.jpeg'];
 
-// images in before directory
-var befores = fs.readdirSync(before).filter(function (filename) {
-  return imgext.some(function (ext) {
-    return filename.endsWith(ext);
-  });
-});
-
-// images in after directory
-var afters = fs.readdirSync(after).filter(function (filename) {
-  return imgext.some(function (ext) {
-    return filename.endsWith(ext);
-  });
-});
-
-// intersected filename
-var images = _.intersection(befores, afters);
-
-// get file sizes
-var beforeFileSize = {};
-_.each(befores, function (b) {
-  var size = fs.statSync(path.join(before, b)).size;
-  beforeFileSize[b] = filesize(size);
-});
-
-// get file sizes
-var afterFileSize = {};
-_.each(afters, function (b) {
-  var size = fs.statSync(path.join(after, b)).size;
-  afterFileSize[b] = filesize(size);
-});
-
-// koa modules
-var koa = require('koa');
-var logger = require('koa-logger');
-var route = require('koa-route');
-var views = require('co-views');
-
-var app = koa();
-
-app.use(logger());
-app.use(route.get('/', index));
-app.use(route.get('/before/*', streamGenerator(before)));
-app.use(route.get('/after/*', streamGenerator(after)));
-
 // renderer
 var render = views(__dirname + '/views', {
   default: 'jade'
@@ -76,8 +37,38 @@ var render = views(__dirname + '/views', {
 
 // route
 function *index() {
+
+  // images in before directory
+  var beforeFiles = fs.readdirSync(before).filter(function (filename) {
+    return imgext.some(function (ext) {
+      return filename.endsWith(ext);
+    });
+  });
+
+  // images in after directory
+  var afterFiles = fs.readdirSync(after).filter(function (filename) {
+    return imgext.some(function (ext) {
+      return filename.endsWith(ext);
+    });
+  });
+
+  // intersected filename
+  var imageFiles = _.intersection(beforeFiles, afterFiles);
+
+  var beforeFileSize = {};
+  var afterFileSize = {};
+  // get file sizes
+  _.each(beforeFiles, function (b) {
+    var size = fs.statSync(path.join(before, b)).size;
+    beforeFileSize[b] = filesize(size);
+  });
+  _.each(afterFiles, function (b) {
+    var size = fs.statSync(path.join(after, b)).size;
+    afterFileSize[b] = filesize(size);
+  });
+
   this.body = yield render('compare', {
-    images: images,
+    images: imageFiles,
     beforeFileSize: beforeFileSize,
     afterFileSize: afterFileSize
   });
@@ -85,12 +76,21 @@ function *index() {
 
 // stream for directories (before and after)
 function streamGenerator (target) {
+  
+  // mapping
   return function *readStream() {
     var filename = path.basename(this.path);
     var filepath = path.join(target, filename);
     this.body = fs.createReadStream(filepath);
   };
 }
+
+var app = koa();
+
+app.use(logger());
+app.use(route.get('/', index));
+app.use(route.get('/before/*', streamGenerator(before)));
+app.use(route.get('/after/*', streamGenerator(after)));
 
 // start server on 3000 port
 if (!module.parent) {

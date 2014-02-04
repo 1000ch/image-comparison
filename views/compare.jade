@@ -5,10 +5,19 @@ html
     title image-comparision
     link(rel='stylesheet' href='//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css')
   body.container
-    each filename in images
-      div.row
-        div.col-xs-6 [before] #{filename} #{beforeFileSize[filename]}
-        div.col-xs-6 [after] #{filename} #{afterFileSize[filename]}
-      div.row
-        div.col-xs-6: img(src='/before/#{filename}', width='100%')
-        div.col-xs-6: img(src='/after/#{filename}', width='100%')
+    table.table.table-condensed.table-hover
+      each filename in images
+        thead
+          tr
+            th(colspan=2)
+              h1 #{filename}
+        tbody
+          tr
+            td
+              h2
+                span.label.label-primary Before #{beforeFileSize[filename]}
+              img(src='/before/#{filename}')
+            td
+              h2
+                span.label.label-success After #{afterFileSize[filename]}
+              img(src='/after/#{filename}')
